@@ -1,7 +1,7 @@
 /**
  * app.js — VASTRAMAHOTSAV 2026 · SDIT
  * Complete Production System:
- * 1. Original Brutalist Preloader + Single-Line Quote Cycler + Opening Intro Track ('./intro-1.m4a')
+ * 1. Preloader Track ('./intro.m4a'), then Popup Intro Track ('./intro-1.m4a')
  * 2. Post-Loading Intro Blast (Viewport Particle Blasters + Sequential Announcement Banners)
  * 3. Sequential 4-Song MPEG Jukebox Loop (track1..track4 on Folk Vibe Stream Card)
  * 4. Daytime Atmosphere Mode, 3D Motion Cards, Live Countdown, and Pass Generator.
@@ -18,17 +18,19 @@ let loadingAudio = null;
 let introAudio = null;
 let folkAudio  = null;
 
-function startLoadingAudio() {
+function startLoadingAudio(restartIfEnded = false) {
   if (!loadingAudio) {
     loadingAudio = new Audio('./intro.m4a');
     loadingAudio.loop = false;
     loadingAudio.preload = 'auto';
   }
-  if (loadingAudio.paused && !loadingAudio.ended) {
-    loadingAudio.play().catch(err => {
+  if (restartIfEnded && loadingAudio.ended) loadingAudio.currentTime = 0;
+  if (!loadingAudio.paused) return Promise.resolve(true);
+  if (loadingAudio.ended) return Promise.resolve(false);
+  return loadingAudio.play().then(() => true).catch(err => {
       console.log('Loading audio autoplay policy prevented playback:', err);
+      return false;
     });
-  }
 }
 
 function startPopupIntroAudio() {
@@ -104,6 +106,8 @@ function startPopupIntroAudio() {
   let progress   = 0;
   let loaderDone = false;
   let preloaderDismissed = false;
+  let entryRequested = false;
+  let loadingAudioFailed = false;
 
   startLoadingAudio();
 
@@ -127,6 +131,7 @@ function startPopupIntroAudio() {
       clearInterval(progressInterval);
       loaderDone = true;
     }
+    maybeDismissPreloader();
   }, 75);
 
   // Dismiss the preloader without restarting the loading track.
@@ -158,21 +163,21 @@ function startPopupIntroAudio() {
     }, 350);
   }
 
+  function maybeDismissPreloader() {
+    if (!entryRequested || !loaderDone) return;
+    if (loadingAudioFailed || !loadingAudio || loadingAudio.ended) dismissPreloader();
+  }
+
+  if (loadingAudio) loadingAudio.addEventListener('ended', maybeDismissPreloader);
+
   // Click/Tap Trigger
   preloader.addEventListener('click', () => {
-    startLoadingAudio();
-    if (progress > 20 || loaderDone) {
-      dismissPreloader();
-    }
+    entryRequested = true;
+    startLoadingAudio(true).then(played => {
+      loadingAudioFailed = !played;
+      maybeDismissPreloader();
+    });
   });
-
-  // Auto-dismiss safety check if user leaves idle
-  const autoTimer = setInterval(() => {
-    if (loaderDone) {
-      clearInterval(autoTimer);
-      setTimeout(dismissPreloader, 1500);
-    }
-  }, 200);
 
 })();
 
