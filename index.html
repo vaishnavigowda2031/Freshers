@@ -73,18 +73,29 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════ POST-LOADING INTRO BLAST LAYER ═══════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════ POST-LOADING INTRO BLAST & SEQUENTIAL POPUPS ═══════════════════════════════════════ -->
   <div id="introBlastLayer" class="intro-blast-layer hidden" aria-hidden="true">
     <!-- Viewport Particle Blasters -->
     <div class="blaster blaster-left" id="blasterLeft"></div>
     <div class="blaster blaster-right" id="blasterRight"></div>
+    <div class="blaster blaster-top-left" id="blasterTopLeft"></div>
+    <div class="blaster blaster-top-right" id="blasterTopRight"></div>
 
-    <!-- Pop-up Card Banner -->
-    <div class="blast-popup-card" id="blastPopupCard">
+    <!-- Pop-up Card Banner 1 -->
+    <div class="blast-popup-card hidden" id="blastPopupCard1">
       <div class="popup-card-inner">
         <span class="popup-tag font-mono">⚡ EXCLUSIVE ANNOUNCEMENT</span>
         <h2 class="popup-heading font-syne">Freshers Day:<br/><span class="text-lime">Prepare for a plot-twist.</span></h2>
         <p class="popup-sub font-mono">CSE // ISE // AIML // AIDS · SDIT AUDITORIUM · 09:30 AM</p>
+      </div>
+    </div>
+
+    <!-- Pop-up Card Banner 2 -->
+    <div class="blast-popup-card hidden" id="blastPopupCard2">
+      <div class="popup-card-inner">
+        <span class="popup-tag font-mono text-cyan">🎵 WELCOME JUNIORS</span>
+        <h2 class="popup-heading font-syne"><span class="text-cyan">Go enjoy the vibe</span><br/>&amp; explore the website, juniors!</h2>
+        <p class="popup-sub font-mono">SCROLLING TO FOLK JUKEBOX CARD... ↙</p>
       </div>
     </div>
   </div>
@@ -182,14 +193,14 @@
         </div>
       </div>
 
-      <!-- Floating stickers -->
+      <!-- Floating stickers (positioned cleanly to avoid overlap) -->
       <div class="sticker sticker-1 font-syne">ETHNIC<br/>ONLY</div>
       <div class="sticker sticker-2 font-mono">2026</div>
       <div class="sticker sticker-3 font-syne">FRESHERS<br/>🎉</div>
     </section>
 
 
-    <!-- ── 4. CONTINUOUS MARQUEE TICKER 1 ── -->
+    <!-- ── CONTINUOUS MARQUEE TICKER 1 ── -->
     <div class="marquee-wrap">
       <div class="marquee-track" id="marqueeTrack">
         <div class="marquee-inner">
@@ -359,12 +370,17 @@
 
         <!-- 4. SEQUENTIAL 4-SONG MPEG JUKEBOX CARD (Card 6) -->
         <div class="motion-card card-vibe card-jukebox reveal-up delay-3" id="jukeboxCard" data-tilt>
+          <!-- Prominent Arrow Pointer pointing to Jukebox card -->
+          <div id="vibePointerArrow" class="vibe-pointer-arrow font-mono hidden">
+            <span class="arrow-bounce">👇</span> CLICK CARD TO PLAY VIBE 🎵
+          </div>
+
           <div class="card-inner">
             <div class="card-num font-mono">06 / JUKEBOX</div>
             <h3 class="card-title font-syne">FOLK VIBE<br/>STREAM</h3>
             <div class="card-body font-mono">
               <p id="jukeboxStatusText" class="text-lime font-bold">Vibe State: Ready to Play (Track 1 of 4)</p>
-              <p class="text-xs text-gray-400 mt-1">[ Click card to cycle tracks ]</p>
+              <p class="text-xs text-gray-300 mt-1">[ Click to play/cycle · Double-click to stop ]</p>
             </div>
             <div class="waveform" id="jukeboxWaveform">
               <div class="wave-bar" style="--h:40%"></div>
