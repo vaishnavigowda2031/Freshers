@@ -1,8 +1,8 @@
 /**
  * app.js — VASTRAMAHOTSAV 2026 · SDIT
  * Complete Production System:
- * 1. Original Brutalist Preloader + Single-Line Quote Cycler + Opening Intro Track ('./intro.mpeg')
- * 2. Post-Loading Intro Blast (Viewport Particle Blasters + Announcement Banner + 2s Cleanup)
+ * 1. Original Brutalist Preloader + Single-Line Quote Cycler + Opening Intro Track ('./intro-1.m4a')
+ * 2. Post-Loading Intro Blast (Viewport Particle Blasters + Sequential Announcement Banners)
  * 3. Sequential 4-Song MPEG Jukebox Loop (track1..track4 on Folk Vibe Stream Card)
  * 4. Daytime Atmosphere Mode, 3D Motion Cards, Live Countdown, and Pass Generator.
  */
@@ -12,10 +12,41 @@
 /* ══════════════════════════════════════════════════════════════════
    GLOBAL STATE & JUKEBOX TRACKS
 ══════════════════════════════════════════════════════════════════ */
-const folkTracks = ['./track1.mpeg', './track2.mpeg', './track3.mpeg', './track4.mpeg'];
+const folkTracks = ['./track1.m4a', './track2.m4a', './track3.m4a', './track4.m4a'];
 let currentIndex = 0;
+let loadingAudio = null;
 let introAudio = null;
 let folkAudio  = null;
+
+function startLoadingAudio() {
+  if (!loadingAudio) {
+    loadingAudio = new Audio('./intro.m4a');
+    loadingAudio.loop = false;
+    loadingAudio.preload = 'auto';
+  }
+  if (loadingAudio.paused && !loadingAudio.ended) {
+    loadingAudio.play().catch(err => {
+      console.log('Loading audio autoplay policy prevented playback:', err);
+    });
+  }
+}
+
+function startPopupIntroAudio() {
+  if (loadingAudio) {
+    loadingAudio.pause();
+    loadingAudio.currentTime = 0;
+  }
+  if (!introAudio) {
+    introAudio = new Audio('./intro-1.m4a');
+    introAudio.loop = false;
+    introAudio.preload = 'auto';
+  }
+  if (introAudio.paused && !introAudio.ended) {
+    introAudio.play().catch(err => {
+      console.log('Popup intro autoplay policy prevented playback:', err);
+    });
+  }
+}
 
 
 /* ══════════════════════════════════════════════════════════════════
@@ -74,6 +105,8 @@ let folkAudio  = null;
   let loaderDone = false;
   let preloaderDismissed = false;
 
+  startLoadingAudio();
+
   // Single-Line Quote Cycling logic
   function cycleQuote() {
     if (!quoteText) return;
@@ -96,22 +129,11 @@ let folkAudio  = null;
     }
   }, 75);
 
-  // Dismiss Preloader & Play Opening Intro Song
+  // Dismiss the preloader without restarting the loading track.
   function dismissPreloader() {
     if (preloaderDismissed) return;
     preloaderDismissed = true;
-
-    // Play local opening audio track ('./intro.mpeg')
-    try {
-      if (folkAudio) { folkAudio.pause(); folkAudio = null; }
-      introAudio = new Audio('./intro.mpeg');
-      introAudio.currentTime = 0;
-      introAudio.play().catch(err => {
-        console.log('Intro audio autoplay policy prevented playback, continuing smoothly:', err);
-      });
-    } catch (e) {
-      console.log('Audio playback error:', e);
-    }
+    startLoadingAudio();
 
     if (loaderBar) {
       loaderBar.style.transition = 'width 0.3s ease';
@@ -138,6 +160,7 @@ let folkAudio  = null;
 
   // Click/Tap Trigger
   preloader.addEventListener('click', () => {
+    startLoadingAudio();
     if (progress > 20 || loaderDone) {
       dismissPreloader();
     }
@@ -159,16 +182,26 @@ let folkAudio  = null;
 ══════════════════════════════════════════════════════════════════ */
 function fireIntroBlast() {
   const blastLayer   = document.getElementById('introBlastLayer');
-  const blasterLeft  = document.getElementById('blasterLeft');
-  const blasterRight = document.getElementById('blasterRight');
+  const blasterBottomLeft  = document.getElementById('blasterLeft');
+  const blasterBottomRight = document.getElementById('blasterRight');
+  const blasterTopLeft     = document.getElementById('blasterTopLeft');
+  const blasterTopRight    = document.getElementById('blasterTopRight');
+  const popupCard1   = document.getElementById('blastPopupCard1');
+  const popupCard2   = document.getElementById('blastPopupCard2');
+  const jukeboxCard  = document.getElementById('jukeboxCard');
+  const vibePointer  = document.getElementById('vibePointerArrow');
 
-  if (!blastLayer || !blasterLeft || !blasterRight) return;
+  if (!blastLayer || !blasterBottomLeft || !blasterBottomRight || !blasterTopLeft || !blasterTopRight) return;
 
   blastLayer.classList.remove('hidden');
+  blastLayer.setAttribute('aria-hidden', 'false');
+  if (popupCard1) popupCard1.classList.remove('hidden');
+  if (popupCard2) popupCard2.classList.add('hidden');
+  startPopupIntroAudio();
 
   const particleColors = ['#CCFF00', '#00E5FF', '#FF007F', '#FFFFFF', '#FFE600'];
 
-  function spawnParticles(container, isLeft) {
+  function spawnParticles(container, corner) {
     container.innerHTML = '';
     for (let i = 0; i < 35; i++) {
       const particle = document.createElement('div');
@@ -176,8 +209,9 @@ function fireIntroBlast() {
 
       const color = particleColors[Math.floor(Math.random() * particleColors.length)];
       const size  = Math.floor(Math.random() * 10 + 8) + 'px';
-      const tx    = Math.floor(Math.random() * 35 + 20) + 'vw';
-      const ty    = -Math.floor(Math.random() * 45 + 30) + 'vh';
+      const tx    = Math.floor(Math.random() * 30 + 15) + 'vw';
+      const verticalDistance = Math.floor(Math.random() * 35 + 20);
+      const ty = (corner.startsWith('top') ? verticalDistance : -verticalDistance) + 'vh';
       const rot   = Math.floor(Math.random() * 1080 - 540) + 'deg';
 
       particle.style.setProperty('--color', color);
@@ -191,20 +225,57 @@ function fireIntroBlast() {
     }
   }
 
-  spawnParticles(blasterLeft, true);
-  spawnParticles(blasterRight, false);
-
-  // Automatic Cleanup after EXACTLY 2 seconds (2000ms)
   setTimeout(() => {
-    blastLayer.classList.add('fade-out');
+    if (popupCard1) popupCard1.classList.add('hidden');
+  }, 3000);
+
+  setTimeout(() => {
+    if (popupCard2) popupCard2.classList.remove('hidden');
+    spawnParticles(blasterTopLeft, 'top-left');
+    spawnParticles(blasterTopRight, 'top-right');
+    spawnParticles(blasterBottomLeft, 'bottom-left');
+    spawnParticles(blasterBottomRight, 'bottom-right');
 
     setTimeout(() => {
-      blastLayer.classList.add('hidden');
-      blastLayer.classList.remove('fade-out');
-      blasterLeft.innerHTML  = '';
-      blasterRight.innerHTML = '';
-    }, 500);
-  }, 2000);
+      blasterTopLeft.innerHTML = '';
+      blasterTopRight.innerHTML = '';
+      blasterBottomLeft.innerHTML = '';
+      blasterBottomRight.innerHTML = '';
+    }, 2000);
+
+    setTimeout(() => {
+      if (popupCard2) popupCard2.classList.add('hidden');
+      blastLayer.classList.add('fade-out');
+      setTimeout(() => {
+        blastLayer.classList.add('hidden');
+        blastLayer.classList.remove('fade-out');
+        blastLayer.setAttribute('aria-hidden', 'true');
+        if (jukeboxCard) {
+          const startY = window.scrollY;
+          const cardTop = jukeboxCard.getBoundingClientRect().top + startY;
+          const targetY = cardTop - (window.innerHeight - jukeboxCard.offsetHeight) / 2;
+          const startTime = performance.now();
+          const duration = 5000;
+          const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+          document.documentElement.style.scrollBehavior = 'auto';
+          if (vibePointer) vibePointer.classList.remove('hidden');
+
+          function scrollToCard(time) {
+            const progress = Math.min((time - startTime) / duration, 1);
+            const easedProgress = progress * progress * (3 - 2 * progress);
+            window.scrollTo(0, startY + (targetY - startY) * easedProgress);
+            if (progress < 1) {
+              requestAnimationFrame(scrollToCard);
+            } else {
+              document.documentElement.style.scrollBehavior = originalScrollBehavior;
+            }
+          }
+
+          requestAnimationFrame(scrollToCard);
+        }
+      }, 500);
+    }, 2400);
+  }, 13000);
 }
 
 
@@ -215,22 +286,36 @@ function initSequentialJukebox() {
   const jukeboxCard = document.getElementById('jukeboxCard');
   const statusText  = document.getElementById('jukeboxStatusText');
   const waveform    = document.getElementById('jukeboxWaveform');
+  const vibePointer = document.getElementById('vibePointerArrow');
+  let clickTimer = null;
 
   if (!jukeboxCard) return;
 
-  jukeboxCard.addEventListener('click', () => {
-    // 1. Instantly halt any running track
+  function stopPlayback() {
     if (folkAudio) {
       folkAudio.pause();
       folkAudio.currentTime = 0;
       folkAudio = null;
     }
+    if (loadingAudio) {
+      loadingAudio.pause();
+      loadingAudio.currentTime = 0;
+    }
     if (introAudio) {
       introAudio.pause();
+      introAudio.currentTime = 0;
       introAudio = null;
     }
+    if (waveform) waveform.querySelectorAll('.wave-bar').forEach(bar => bar.classList.remove('playing'));
+    for (let i = 1; i <= 4; i++) {
+      const tag = document.getElementById(`vtag${i}`);
+      if (tag) tag.classList.remove('active-track');
+    }
+    if (statusText) statusText.textContent = 'Vibe State: Playback stopped. Click to play.';
+  }
 
-    // 2. Dynamically load & play active track matching folkTracks[currentIndex]
+  function playNextTrack() {
+    stopPlayback();
     const trackPath = folkTracks[currentIndex];
     const trackNumber = currentIndex + 1;
 
@@ -243,12 +328,10 @@ function initSequentialJukebox() {
       console.log('Jukebox Audio Error:', err);
     }
 
-    // 3. Update text subtitle on card layout dynamically
     if (statusText) {
       statusText.textContent = `Vibe State: Playing Track ${trackNumber} of 4`;
     }
 
-    // Update Waveform & Track Tags
     if (waveform) {
       waveform.querySelectorAll('.wave-bar').forEach(bar => bar.classList.add('playing'));
     }
@@ -264,8 +347,27 @@ function initSequentialJukebox() {
       }
     }
 
-    // 4. Increment pointer index wrapping seamlessly back to 0 using modulo
     currentIndex = (currentIndex + 1) % folkTracks.length;
+  }
+
+  jukeboxCard.addEventListener('click', () => {
+    if (vibePointer) vibePointer.classList.add('hidden');
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      return;
+    }
+    clickTimer = setTimeout(() => {
+      clickTimer = null;
+      playNextTrack();
+    }, 280);
+  });
+
+  jukeboxCard.addEventListener('dblclick', event => {
+    event.preventDefault();
+    if (clickTimer) clearTimeout(clickTimer);
+    clickTimer = null;
+    stopPlayback();
   });
 }
 
